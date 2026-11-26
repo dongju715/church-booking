@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c3566">
+<title>장소예약</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231c3566'/><circle cx='16' cy='16' r='7' fill='%23f0553a'/></svg>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <p class="eyebrow" id="subtitle"></p>
+      <h1 id="churchTitle">장소예약</h1>
+    </div>
+    <div class="top-actions">
+      <button class="ghost" id="logBtn">예약 이력</button>
+      <button class="ghost" id="adminBtn">관리자</button>
+    </div>
+  </header>
+
+  <section class="spaces" aria-label="공간 선택">
+    <div class="space-list" id="spaceList" role="tablist"></div>
+    <button class="add-space" id="addSpaceBtn" hidden>⚙ 장소 관리</button>
+  </section>
+
+  <section class="week-head">
+    <div class="month-block">
+      <span class="big-month" id="bigMonth"></span>
+      <div class="month-meta">
+        <span class="circle-num" id="monthNum"></span>
+        <span class="year" id="yearNum"></span>
+      </div>
+    </div>
+    <div class="week-ctrl">
+      <p class="range" id="rangeLabel"></p>
+      <div class="nav">
+        <button id="prevWeek" aria-label="이전 주">‹ 이전 주</button>
+        <button id="thisWeek">이번 주</button>
+        <button id="nextWeek" aria-label="다음 주">다음 주 ›</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="legend">
+    <span><i class="sw free"></i>빈 시간 (눌러서 예약)</span>
+    <span><i class="sw booked"></i>예약됨 (눌러서 상세보기)</span>
+    <span><i class="sw past"></i>지난 시간</span>
+    <span class="live" id="live">● 실시간 연결</span>
+  </div>
+
+  <div class="day-tabs" id="dayTabs" role="tablist" aria-label="요일 선택"></div>
+
+  <section class="board-wrap">
+    <div class="board" id="board"></div>
+  </section>
+
+  <footer class="credit">LIGHTUP MEDIA.</footer>
+</div>
+
+<!-- 예약 입력 -->
+<dialog id="bookDlg">
+  <form method="dialog" id="bookForm">
+    <h2>예약하기</h2>
+    <dl class="summary">
+      <dt>공간</dt><dd id="bkSpace"></dd>
+      <dt>날짜</dt><dd id="bkDate"></dd>
+    </dl>
+    <div class="row2">
+      <label>시작 시간<select id="bkStart"></select></label>
+      <label>종료 시간<select id="bkEnd"></select></label>
+    </div>
+    <label>부서 · 교구 <b class="req">필수</b>
+      <select id="bkDeptSel"></select>
+      <input id="bkDept" maxlength="30" autocomplete="off" placeholder="부서명을 직접 입력해 주세요">
+    </label>
+    <label>사용 목적 <span class="opt">선택</span><input id="bkPurpose" maxlength="200" autocomplete="off" placeholder="예: 주일 연습"></label>
+    <label>취소용 비밀번호 <b class="req">숫자 4자리</b><input id="bkPin" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off" placeholder="예약 취소할 때 필요해요"></label>
+    <p class="err" id="bkErr" role="alert"></p>
+    <div class="btns">
+      <button type="button" class="ghost" data-close>닫기</button>
+      <button type="submit" class="primary" id="bkSubmit">예약하기</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 예약 상세 / 취소 -->
+<dialog id="detailDlg">
+  <form method="dialog" id="detailForm">
+    <h2>예약 상세</h2>
+    <dl class="summary" id="dtInfo"></dl>
+    <div id="cancelArea">
+      <label id="pinLabel">취소용 비밀번호<input id="dtPin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="예약할 때 정한 숫자 4자리"></label>
+      <p class="hint" id="adminHint" hidden>관리자로 로그인되어 있어 비밀번호 없이 취소할 수 있습니다.</p>
+    </div>
+    <p class="err" id="dtErr" role="alert"></p>
+    <div class="btns">
+      <button type="button" class="ghost" data-close>닫기</button>
+      <button type="submit" class="danger" id="dtCancel">예약 취소</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 취소 확인 -->
+<dialog id="confirmDlg">
+  <form method="dialog">
+    <h2>정말 취소할까요?</h2>
+    <p id="confirmText"></p>
+    <div class="btns">
+      <button value="no" class="ghost">아니요</button>
+      <button value="yes" class="danger">네, 취소합니다</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 관리자 -->
+<dialog id="adminDlg" class="wide">
+  <form method="dialog" id="adminForm">
+    <h2>관리자</h2>
+    <div id="adminLogin">
+      <label>관리자 비밀번호<input id="adPw" type="password" autocomplete="current-password"></label>
+      <p class="err" id="adErr" role="alert"></p>
+      <div class="btns">
+        <button type="button" class="ghost" data-close>닫기</button>
+        <button type="submit" class="primary" id="adSubmit">로그인</button>
+      </div>
+    </div>
+    <div id="adminPanel" hidden>
+      <div class="tabs" role="tablist">
+        <button type="button" data-tab="info" aria-selected="true">기본 정보</button>
+        <button type="button" data-tab="spaces">장소</button>
+        <button type="button" data-tab="depts">부서 · 교구</button>
+      </div>
+
+      <section data-pane="info">
+        <label>교회 이름<input id="setName" maxlength="20" placeholder="예: 감람교회"></label>
+        <p class="hint">화면 제목이 “<b id="setPreview"></b> 장소예약”으로 표시됩니다.</p>
+        <label>영문 부제 <span class="opt">선택</span><input id="setSub" maxlength="40" placeholder="예: KAMRAM CHURCH · SPACE BOOKING"></label>
+        <label class="check"><input type="checkbox" id="setCustom"> 목록에 없는 부서도 직접 입력해 예약할 수 있게 하기</label>
+        <div class="btns"><button type="button" class="primary" id="saveInfo">저장</button></div>
+      </section>
+
+      <section data-pane="spaces" hidden>
+        <ul class="edit-list" id="spaceEdit"></ul>
+        <div class="add-row">
+          <input id="newSpace" maxlength="30" placeholder="새 장소 이름 (예: 카페, 소그룹실 2)">
+          <button type="button" class="primary" id="addSpace">추가</button>
+        </div>
+      </section>
+
+      <section data-pane="depts" hidden>
+        <p class="hint">예약할 때 고를 수 있는 목록입니다. 분류(부서·교구·기관 등)를 함께 정할 수 있어요.</p>
+        <ul class="edit-list" id="deptEdit"></ul>
+        <div class="add-row">
+          <select id="newDeptKind"><option>부서</option><option>교구</option><option>기관</option><option>선교회</option><option>기타</option></select>
+          <input id="newDept" maxlength="30" placeholder="이름 (예: 청년부, 1교구)">
+          <button type="button" class="primary" id="addDept">추가</button>
+        </div>
+      </section>
+
+      <p class="err" id="adErr2" role="alert"></p>
+      <div class="btns">
+        <button type="button" class="ghost" id="adLogout">로그아웃</button>
+        <button type="button" class="ghost" data-close>닫기</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- 이력 -->
+<dialog id="logDlg" class="wide">
+  <form method="dialog">
+    <h2>예약 · 취소 이력</h2>
+    <ul class="logs" id="logList"></ul>
+    <div class="btns"><button class="ghost">닫기</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/app.js"></script>
+</body>
+</html>
